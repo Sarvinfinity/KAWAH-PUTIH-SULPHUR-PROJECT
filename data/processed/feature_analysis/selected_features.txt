@@ -1,0 +1,22 @@
+Selected Features for ML Training
+==================================================
+ 1. SO2
+ 2. H2S
+ 3. RSSI_dBm
+ 4. SNR_dB
+ 5. meteo_modifier
+ 6. node_modifier
+ 7. SO2_normalized
+ 8. H2S_normalized
+ 9. CHI
+10. SO2_H2S_ratio
+11. SO2_rolling_mean_10min
+12. SO2_rolling_std_10min
+13. SO2_rolling_max_10min
+14. H2S_rolling_mean_10min
+15. H2S_rolling_std_10min
+16. H2S_rolling_max_10min
+17. SO2_rate_of_change
+18. H2S_rate_of_change
+19. SO2_cumulative_4hour
+20. H2S_cumulative_4hour
