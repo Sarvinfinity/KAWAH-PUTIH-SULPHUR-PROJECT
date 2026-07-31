@@ -33,29 +33,45 @@ The project is structured into three cleanly decoupled layers:
 ## 2. Folder Structure
 
 ```
-.
-├── api/                           # FastAPI serving layer
-│   ├── __init__.py                # Package marker
-│   └── main.py                    # Main API server & routes
-├── src/                           # Core data science modules
-│   ├── adaptive_hazard_labeling.py# Scenario E rolling baseline & Z-score rules
-│   ├── atmospheric_correction.py  # Physics-based correction algorithms
-│   ├── composite_hazard.py        # Composite hazard index (CHI) equations
-│   ├── hazard_labeling.py         # Standard WHO / NIOSH threshold rules
-│   └── training.py                # ML ablation & classifier training utilities
-├── web-dashboard/                 # React frontend client
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Dashboard.tsx      # Main dashboard containing TanStack Query hooks
-│   │   │   └── Sidebar.tsx        # Application navigation panel
-│   │   ├── App.tsx                # Layout and tab controller
-│   │   └── main.tsx               # QueryClient provider setup
-│   └── Dockerfile                 # Multi-stage production Nginx dockerfile
-├── Dockerfile                     # Backend API server dockerfile
-├── docker-compose.yml             # Container orchestration config
-├── requirements.txt               # Locked python dependencies
-├── all_data_ts.csv                # Raw IoT telemetry dataset
-└── expanded_24H_all_data.csv      # 24h expanded corrected reference dataset
+KAWAH-PUTIH-SULPHUR-PROJECT/
+│
+├── backend/                     # FastAPI Backend + ML & Models (Self-contained Deployment)
+│   ├── api/                     # API routes & main.py entrypoint
+│   ├── src/                     # Core safety, hazard labeling, and ML modules
+│   │   ├── forecasting.py       # SeqLSTM prediction module
+│   │   ├── training.py          # ML ablation model trainer
+│   │   ├── expand_dataset.py    # LSTM-based 24h expansion script
+│   │   ├── prophet_expand.py    # Deprecated Prophet expansion script
+│   │   ├── visualization.py     # Verification plot generator
+│   │   └── run_analysis.py      # Visualizations and forecasting pipeline runner
+│   ├── models/                  # Stored model weights (xgboost_weights.joblib)
+│   ├── notebooks/               # Jupyter research notebooks
+│   ├── scripts/                 # Validation & feature helper scripts
+│   ├── tests/                   # Unit and integration tests
+│   ├── config.py                # Backend configuration file
+│   ├── requirements.txt         # Production dependencies
+│   └── Dockerfile               # Backend container configuration
+│
+├── frontend/                    # Decoupled React client
+│   ├── src/                     # App, components, assets, and styles
+│   ├── public/                  # Public assets
+│   ├── package.json             # NPM package configurations
+│   ├── vite.config.ts           # Bundler settings
+│   └── Dockerfile               # Production Nginx dockerfile
+│
+├── data/                        # Decoupled data folder
+│   ├── raw/                     # Original 7H raw IoT telemetry data
+│   ├── processed/               # Expanded 24H reference datasets
+│   └── external/                # External or secondary dataset references
+│
+├── outputs/                     # Pipeline output directories
+│   ├── plots/                   # Output visualization png charts
+│   ├── reports/                 # Output csv tables and evaluation reports
+│   └── predictions/             # Output prediction csv tables
+│
+├── docs/                        # Research documentation
+├── docker-compose.yml           # Multi-container local deployment
+└── README.md
 ```
 
 ---
@@ -72,11 +88,11 @@ The project is structured into three cleanly decoupled layers:
     ```bash
     python -m venv .venv
     source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
-    pip install -r requirements.txt
+    pip install -r backend/requirements.txt
     ```
 2.  **Frontend Environment Setup:**
     ```bash
-    cd web-dashboard
+    cd frontend
     npm install
     ```
 
@@ -84,11 +100,11 @@ The project is structured into three cleanly decoupled layers:
 1.  **Launch the Backend API Server:**
     ```bash
     # Run from repository root
-    python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+    python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8000
     ```
 2.  **Launch the Frontend Dev Server:**
     ```bash
-    cd web-dashboard
+    cd frontend
     npm run dev
     ```
     Access the dashboard at `http://localhost:5173`.

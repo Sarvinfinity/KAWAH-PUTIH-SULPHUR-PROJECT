@@ -4,19 +4,19 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./expanded_24H_all_data.csv:/app/expanded_24H_all_data.csv
-      - ./models:/app/models
+      - ./data/processed/expanded_24H_all_data.csv:/app/data/processed/expanded_24H_all_data.csv
+      - ./backend/models:/app/models
     restart: always
 
   frontend:
     build:
-      context: ./web-dashboard
+      context: ./frontend
       dockerfile: Dockerfile
     ports:
       - "80:80"
