@@ -30,18 +30,6 @@ NODE_META = {
 }
 
 
-def apply_domain_adjustments(predicted_raw, timestamps):
-    for i in range(len(predicted_raw)):
-        dt = timestamps[i]
-        hour = dt.hour + dt.minute / 60.0 + dt.second / 3600.0
-        night_factor = max(0, np.cos((hour - 2) * np.pi / 12))
-        predicted_raw[i, 0] = predicted_raw[i, 0] * (1.0 + 1.5 * night_factor) + (50 * night_factor)
-        predicted_raw[i, 1] = predicted_raw[i, 1] * (1.0 + 1.2 * night_factor) + (20 * night_factor)
-        noise_factor = np.random.normal(0, 0.08, size=predicted_raw.shape[1])
-        predicted_raw[i] = predicted_raw[i] * (1.0 + noise_factor)
-        predicted_raw[i, :4] = np.maximum(predicted_raw[i, :4], 0.0)
-    return predicted_raw
-
 
 def process_node_full_synthetic(df_node, node_id, target_end_time, time_step=30):
     print(f"\n--- Full synthetic generation for node {node_id} ---")
@@ -99,7 +87,6 @@ def process_node_full_synthetic(df_node, node_id, target_end_time, time_step=30)
         current_window = np.vstack((current_window[1:], np.hstack((yhat, next_time_features))))
 
     predicted_raw = scaler.inverse_transform(np.array(generated_scaled))
-    predicted_raw = apply_domain_adjustments(predicted_raw, list(output_timestamps))
     out_timestamps = list(output_timestamps)
 
     df_out = pd.DataFrame(predicted_raw, columns=TARGET_COLS)
@@ -109,6 +96,13 @@ def process_node_full_synthetic(df_node, node_id, target_end_time, time_step=30)
     df_out['location'] = meta['location']
     df_out['elevation'] = meta['elevation']
     df_out['ack_success'] = True
+    
+    # Apply physics-based correction
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from src.atmospheric_correction import apply_atmospheric_physics_correction
+    df_out = apply_atmospheric_physics_correction(df_out, elevation_m=meta['elevation'])
 
     time_feats = np.array([get_time_features(t) for t in df_out['timestamp']])
     df_out['hour_sin'] = time_feats[:, 0]

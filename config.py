@@ -3,8 +3,8 @@
 TARGET_COLS = ['SO2', 'H2S', 'Temp_C', 'Humidity_pct', 'RSSI_dBm', 'SNR_dB']
 
 SENSOR_LABELS = {
-    'SO2': 'SO2 (ppb)',
-    'H2S': 'H2S (ppb)',
+    'SO2': 'SO2 (ppm)',
+    'H2S': 'H2S (ppm)',
     'Temp_C': 'Temperature (°C)',
     'Humidity_pct': 'Humidity (%)',
     'RSSI_dBm': 'RSSI (dBm)',

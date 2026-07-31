@@ -7,7 +7,7 @@ import torch.nn as nn
 import datetime
 
 # Target continuous columns to model and predict
-TARGET_COLS = ['SO2', 'H2S', 'Temp_C', 'Humidity_pct', 'Wind_kph', 'RSSI_dBm', 'SNR_dB']
+TARGET_COLS = ['SO2', 'H2S', 'Temp_C', 'Humidity_pct', 'RSSI_dBm', 'SNR_dB']
 
 def create_dataset(dataset, time_step=1):
     dataX, dataY = [], []
@@ -135,34 +135,21 @@ def process_node(df_node, node_id, time_step=30, future_seconds=17*3600):
     # 4. Inverse transform predictions
     predicted_raw = scaler.inverse_transform(np.array(generated_data))
     
-    # 5. Apply domain-specific diurnal adjustments and noise
-    # The LSTM may produce overly smooth or linear trends for long horizons.
-    # We boost SO2 and H2S during night hours and add realistic variance.
-    for i in range(len(predicted_raw)):
-        dt = generated_timestamps[i]
-        hour = dt.hour + dt.minute / 60.0 + dt.second / 3600.0
-        
-        # Calculate a night factor: peaks at 2 AM, troughs at 2 PM
-        night_factor = max(0, np.cos((hour - 2) * np.pi / 12))
-        
-        # 1. Boost SO2 (index 0) and H2S (index 1) at night
-        # The user noted these increase at night. We add a multiplicative boost
-        # and a baseline additive factor in case the prediction dropped near zero.
-        predicted_raw[i, 0] = predicted_raw[i, 0] * (1.0 + 1.5 * night_factor) + (50 * night_factor)
-        predicted_raw[i, 1] = predicted_raw[i, 1] * (1.0 + 1.2 * night_factor) + (20 * night_factor)
-        
-        # 2. Add realistic noise to break the linear/flat curve
-        noise_factor = np.random.normal(0, 0.08, size=predicted_raw.shape[1])
-        predicted_raw[i] = predicted_raw[i] * (1.0 + noise_factor)
-        
-        # Prevent negative values for physical quantities (first 5 columns)
-        predicted_raw[i, :5] = np.maximum(predicted_raw[i, :5], 0.0)
-    
-    # 6. Create DataFrame for generated data
+    # 5. Create DataFrame for generated data first, so we can pass it to the physics layer
     df_generated = pd.DataFrame(predicted_raw, columns=TARGET_COLS)
     df_generated['timestamp'] = generated_timestamps
     df_generated['node_id'] = node_id
     df_generated['ack_success'] = True # Assume true for generated future data
+    
+    # 6. Apply physics-based atmospheric correction
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from src.atmospheric_correction import apply_atmospheric_physics_correction
+    
+    # Node 1 is ~2201.98m, Node 2 is ~2192.38m (or legacy ids 76/56)
+    elevation_m = 2201.98 if node_id in (1, 76) else 2192.38
+    df_generated = apply_atmospheric_physics_correction(df_generated, elevation_m=elevation_m)
     
     return df_generated
 

@@ -4,10 +4,24 @@ from prophet import Prophet
 import matplotlib.pyplot as plt
 import logging
 import warnings
+import sys
 
 # Suppress Prophet logs and warnings for clean output
 logging.getLogger("prophet").setLevel(logging.ERROR)
 warnings.filterwarnings("ignore")
+
+# ==============================================================================
+# DEPRECATION WARNING
+# As per the new architectural guidelines, this Prophet expansion script is 
+# DEPRECATED. The primary forecasting pipeline now exclusively utilizes SeqLSTM 
+# augmented with a physics-based atmospheric correction post-processing layer.
+# Please see `expand_dataset.py` and `src/atmospheric_correction.py` instead.
+# ==============================================================================
+
+print("\n" + "="*80)
+print("WARNING: prophet_expand.py is DEPRECATED and should not be used in production.")
+print("The forecasting pipeline has been refactored to use SeqLSTM exclusively.")
+print("="*80 + "\n")
 
 TARGET_COLS = ['SO2', 'H2S', 'Temp_C', 'Humidity_pct', 'RSSI_dBm', 'SNR_dB']
 

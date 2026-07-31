@@ -27,6 +27,7 @@ from config import (
     VIZ_DIR,
 )
 from expand_dataset import MultivariateLSTM, create_dataset, get_time_features
+from src.atmospheric_correction import apply_atmospheric_physics_correction
 
 FORECAST_VIZ_DIR = os.path.join(VIZ_DIR, 'forecasts')
 
@@ -168,9 +169,16 @@ def forecast_1h_window(df_node, node_id, time_step=30, epochs=60):
     for i, col in enumerate(TARGET_COLS):
         forecast_df[col] = predicted[:, i]
     forecast_df['ack_success'] = True
+    
+    # Apply atmospheric physics correction
+    elevation_m = df_node['elevation'].iloc[0] if 'elevation' in df_node.columns else 2200.0
+    forecast_df = apply_atmospheric_physics_correction(forecast_df, elevation_m)
 
+    # Re-extract actual values for metrics comparison AFTER correction
+    # Note: metrics should ideally compare to real values, but if holdout is synthetic it will compare to synthetic
     actual_vals = holdout_df[TARGET_COLS].values
-    metrics = compute_metrics(actual_vals, predicted)
+    corrected_predicted = forecast_df[TARGET_COLS].values
+    metrics = compute_metrics(actual_vals, corrected_predicted)
 
     return forecast_df, holdout_df, metrics
 
@@ -216,9 +224,14 @@ def forecast_24h_window(df_train_node, df_ref_node, node_id, time_step=30, epoch
     for i, col in enumerate(TARGET_COLS):
         forecast_df[col] = predicted[:, i]
     forecast_df['ack_success'] = True
+    
+    # Apply atmospheric physics correction
+    elevation_m = meta.get('elevation', df_ref_node['elevation'].iloc[0] if 'elevation' in df_ref_node.columns else 2200.0)
+    forecast_df = apply_atmospheric_physics_correction(forecast_df, elevation_m)
 
     actual_vals = ref_df[TARGET_COLS].values
-    metrics = compute_metrics(actual_vals, predicted)
+    corrected_predicted = forecast_df[TARGET_COLS].values
+    metrics = compute_metrics(actual_vals, corrected_predicted)
 
     return forecast_df, ref_df, metrics
 
