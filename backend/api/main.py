@@ -20,13 +20,14 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from pathlib import Path
+
 # ---------------------------------------------------------------------------
 # Project path setup
 # ---------------------------------------------------------------------------
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
-BACKEND_DIR = os.path.dirname(APP_DIR)
-WORKSPACE_ROOT = os.path.dirname(BACKEND_DIR)
-sys.path.insert(0, BACKEND_DIR)
+API_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = API_DIR.parent
+sys.path.insert(0, str(BACKEND_DIR))
 
 from src.adaptive_hazard_labeling import label_adaptive_volcanic_hybrid
 from src.hazard_labeling import add_hazard_level
@@ -43,20 +44,10 @@ logger = logging.getLogger("kawah_api")
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-# Locate files robustly for both local development and docker
-DATA_CANDIDATES = [
-    os.path.join(WORKSPACE_ROOT, "data", "processed", "expanded_24H_all_data.csv"),
-    os.path.join(BACKEND_DIR, "data", "processed", "expanded_24H_all_data.csv"),
-    "/app/data/processed/expanded_24H_all_data.csv",
-    "/app/expanded_24H_all_data.csv"
-]
-DATA_PATH = next((p for p in DATA_CANDIDATES if os.path.exists(p)), DATA_CANDIDATES[0])
+# Paths are relative to BACKEND_DIR so they work both locally and on Render (native Python deployment)
+DATA_PATH = BACKEND_DIR / "data" / "processed" / "expanded_24H_all_data.csv"
+MODEL_PATH = BACKEND_DIR / "models" / "xgboost_weights.joblib"
 
-MODEL_CANDIDATES = [
-    os.path.join(BACKEND_DIR, "models", "xgboost_weights.joblib"),
-    "/app/models/xgboost_weights.joblib"
-]
-MODEL_PATH = next((p for p in MODEL_CANDIDATES if os.path.exists(p)), MODEL_CANDIDATES[0])
 
 NODE_ID_MAP = {76: 76, 56: 56, 1: 76, 2: 56}  # normalize legacy IDs
 
